@@ -36,14 +36,14 @@ int main(int argc, char** argv)
 				int notevalue = ch2aoff[inbuffch - 'A'];
 
 				if (accident == '#') {
-					++notevalue;
+					notevalue = (notevalue + 1) % 12;
 					++inbuffptr;
 				} else if (accident == 'b') {
-					--notevalue;
+					notevalue = (notevalue + 11) % 12;
 					++inbuffptr;
 				}
 
-				notevalue = (notevalue + offset) % 12;
+				notevalue = (notevalue + offset + 12) % 12;
 				strcpy(outbuffptr, aoff2str[notevalue]);
 				outbuffptr += strlen(outbuffptr);
 			} else {

@@ -1,22 +1,10 @@
 # transpose
 
-Transposes musical notes by offset
-Example:
+Transposes musical notes by offset. Example:
 
-## Input
-
-```
-Ab G B Bb
-```
-
-## Command
-
-```
-transpose -1
-```
-
-## Output
-
-```
-A Gb Bb A
+```sh
+$ cat notes
+A A# B C C# D D# E F F# G G#
+$ cat notes | transpose -1
+G# A A# B C C# D D# E F F# G
 ```

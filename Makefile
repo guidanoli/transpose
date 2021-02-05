@@ -1,7 +1,15 @@
+INSTALL_LOC=/usr/local/bin
+INSTALL=install -p -m 0755
+
+all: transpose note2aoff
+
 transpose: transpose.c
 	${CC} $< -o $@
 
-install: transpose
-	install -p -m 0755 transpose /usr/local/bin
+note2aoff: note2aoff.c
+	${CC} $< -o $@
+
+install: transpose note2aoff
+	${INSTALL} $^ ${INSTALL_LOC}
 
 .PHONY: install

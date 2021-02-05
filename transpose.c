@@ -10,14 +10,14 @@ int main(int argc, char** argv)
 	size_t size;
 
 	/* Converts A(0) to G(6) to semi-tone offset relative to A */
-	static const int ch2off[7] = { 0, 2, 3, 5, 7, 8, 10 };
+	static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
 
 	/* Converts semi-tone offset relative to A to string */
-	static const char* const off2str[12] = { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
+	static const char* const aoff2str[12] = { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s OFFSET\n"
-				"Transpose musical notes by offset\n", *argv);
+				"Transpose musical notes by offset\n", argv[0]);
 		return 1;
 	}
 
@@ -30,11 +30,10 @@ int main(int argc, char** argv)
 
 	while (fgets(inbuff, sizeof(inbuff), stdin) != NULL) {
 		char* outbuffptr = outbuff;
-		*outbuffptr = '\0';
 		for (char* inbuffptr = inbuff, inbuffch = inbuffptr[0]; inbuffch != '\0'; inbuffch = *(++inbuffptr)) {
 			if (inbuffch >= 'A' && inbuffch <= 'G') {
 				char accident = inbuffptr[1];
-				int notevalue = ch2off[inbuffch - 'A'];
+				int notevalue = ch2aoff[inbuffch - 'A'];
 
 				if (accident == '#') {
 					++notevalue;
@@ -44,13 +43,14 @@ int main(int argc, char** argv)
 					++inbuffptr;
 				}
 
-				notevalue = (notevalue + offset + 12) % 12;
-				strcpy(outbuffptr, off2str[notevalue]);
+				notevalue = (notevalue + offset) % 12;
+				strcpy(outbuffptr, aoff2str[notevalue]);
 				outbuffptr += strlen(outbuffptr);
 			} else {
 				*(outbuffptr++) = inbuffch;
 			}
 		}
+		*outbuffptr = '\0';
 		if (fputs(outbuff, stdout) < 0) {
 			fprintf(stderr, "Could not write '%s' to stdout\n", outbuff);
 			return 1;

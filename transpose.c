@@ -9,10 +9,10 @@ int main(int argc, char** argv)
 	long int offset;
 	size_t size;
 
-	/* Converts A(0) to G(6) to semi-tone offset relative to A */
+	/* A minor scale notes offsets to A */
 	static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
 
-	/* Converts semi-tone offset relative to A to string */
+	/* A chromatic scale notes */
 	static const char* const aoff2str[12] = { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
 
 	if (argc < 2) {
@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 
 	offset = strtol(argv[1], &end, 10) % 12;
 
-	if (end == argv[1] || end != argv[1] + strlen(argv[1])) {
+	if (end == argv[1] || *end != '\0') {
 		fprintf(stderr, "Could not convert '%s' into a long int\n", argv[1]);
 		return 1;
 	}

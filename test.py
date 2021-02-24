@@ -28,8 +28,10 @@ def notes():
     return ' '.join(generate_notes())
 
 @pytest.fixture
-def asnp_notes():
-    return '4 '.join(generate_notes()) + '4'
+def bufsiz():
+    info = run('-l')
+    assert info.returncode == 0, info.stdef
+    return int(info.stdout)
 
 @pytest.mark.parametrize("output, args", [
     ("A A# G# B C A# C C# B D D# C# E F D# F F# E G G# F#", ['0']),
@@ -44,16 +46,14 @@ def test_notes(notes, output, args):
     assert info.returncode == 0, info.stderr
     assert info.stdout == output
 
-@pytest.mark.parametrize("output, args", [
-    ("A4 A#4 G#4 B4 C4 A#4 C4 C#4 B4 D4 D#4 C#4 E4 F4 D#4 F4 F#4 E4 G4 G#4 F#4", ['0']),
-    ("A#4 B4 A4 C5 C#4 B4 C#4 D4 C5 D#4 E4 D4 F4 F#4 E4 F#4 G4 F4 G#4 A4 G4",    ['1']),
-    ("G#4 A4 G4 A#4 B3 A4 B3 C4 A#4 C#4 D4 C4 D#4 E4 D4 E4 F4 D#4 F#4 G4 F4",    ['-1']),
-    ("A4 Bb4 Ab4 B4 C4 Bb4 C4 Db4 B4 D4 Eb4 Db4 E4 F4 Eb4 F4 Gb4 E4 G4 Ab4 Gb4", ['0', '-b']),
-    ("Bb4 B4 A4 C5 Db4 B4 Db4 D4 C5 Eb4 E4 D4 F4 Gb4 E4 Gb4 G4 F4 Ab4 A4 G4",    ['1', '-b']),
-    ("Ab4 A4 G4 Bb4 B3 A4 B3 C4 Bb4 Db4 D4 C4 Eb4 E4 D4 E4 F4 Eb4 Gb4 G4 F4",    ['-1', '-b']),
-])
-def test_asnp_notes(asnp_notes, output, args):
-    info = run(*args, '-s', input=asnp_notes)
-    assert info.returncode == 0, info.stderr
-    assert info.stdout == output
+def test_buffer_overflow(bufsiz):
+    for note in generate_notes():
+        for offset in range(-11,12):
+            info = run(str(offset), input=note)
+            assert info.returncode == 0
+            expected = info.stdout
+            n = bufsiz // len(note)
+            info = run(str(offset), input=note*n)
+            assert info.returncode == 0
+            assert info.stdout == expected*n, (note, offset)
 

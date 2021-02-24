@@ -4,7 +4,7 @@ INSTALL=install -p -m 0755
 all: transpose 
 
 transpose: transpose.c
-	${CC} $< -o $@ -Wall -O2
+	${CC} $< -o $@ ${CFLAGS}
 
 install: transpose
 	${INSTALL} $^ ${INSTALL_LOC}

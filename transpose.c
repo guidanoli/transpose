@@ -18,6 +18,7 @@ int main(int argc, char** argv)
 	char inbuff[BUFSIZ], outbuff[BUFSIZ*3];
 	long int offset;
 	int usebemol;
+	int usescientific;
 	size_t size;
 
 	/* A minor scale notes offsets to A */
@@ -33,11 +34,12 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Transpose musical notes by offset\n"
 				"Usage: %s OFFSET [OPTIONS]\n"
 				"Options:\n"
-				"  -b  print accidents with b instead of #\n", argv[0]);
+				"  -b  print accidents with b instead of #\n"
+				"  -s  read scientific pitch notation\n", argv[0]);
 		return 1;
 	}
 
-	offset = strtol(argv[1], &end, 10) % 12;
+	offset = strtol(argv[1], &end, 10);
 
 	if (end == argv[1] || *end != '\0') {
 		fprintf(stderr, "Could not convert '%s' into a long int\n", argv[1]);
@@ -45,25 +47,48 @@ int main(int argc, char** argv)
 	}
 
 	usebemol = has_option(argc, argv, "-b");
+	usescientific = has_option(argc, argv, "-s");
 
 	while (fgets(inbuff, sizeof(inbuff), stdin) != NULL) {
 		char* outbuffptr = outbuff;
 		for (char* inbuffptr = inbuff, inbuffch = inbuffptr[0]; inbuffch != '\0'; inbuffch = *(++inbuffptr)) {
 			if (inbuffch >= 'A' && inbuffch <= 'G') {
 				char accident = inbuffptr[1];
-				int notevalue = ch2aoff[inbuffch - 'A'];
+				long int aoff = ch2aoff[inbuffch - 'A'], newaoff;
 
 				if (accident == '#') {
-					notevalue = (notevalue + 1) % 12;
+					aoff = aoff + 1;
 					++inbuffptr;
 				} else if (accident == 'b') {
-					notevalue = (notevalue + 11) % 12;
+					aoff = aoff - 1;
 					++inbuffptr;
 				}
 
-				notevalue = (notevalue + offset + 12) % 12;
-				strcpy(outbuffptr, aoff2str[usebemol][notevalue]);
+				newaoff = (((aoff + offset) % 12) + 12) % 12;
+				strcpy(outbuffptr, aoff2str[usebemol][newaoff]);
 				outbuffptr += strlen(outbuffptr);
+
+				if (usescientific) {
+					long int oct = strtol(inbuffptr + 1, &end, 10), newoct;
+					if (end == inbuffptr + 1) {
+						fprintf(stderr, "Note at '%s' not in scientific pitch notation\n", inbuffptr + 1);
+						return 1;
+					} else {
+						int nchars;
+						newoct = (oct * 12 + aoff - 3 + offset) / 12;
+						if (newoct < 0) {
+							fprintf(stderr, "Negative octave\n");
+							return 1;
+						}
+						nchars = sprintf(outbuffptr, "%ld", newoct);
+						if (nchars < 0) {
+							fprintf(stderr, "Could not print long integer to output buffer\n");
+							return 1;
+						}
+						inbuffptr = end - 1;
+					}
+					
+				}
 			} else {
 				*(outbuffptr++) = inbuffch;
 			}

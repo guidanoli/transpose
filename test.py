@@ -1,3 +1,5 @@
+import random
+import string
 import subprocess
 import pathlib
 import pytest
@@ -27,12 +29,6 @@ def generate_notes():
 def notes():
     return ' '.join(generate_notes())
 
-@pytest.fixture
-def bufsiz():
-    info = run('-l')
-    assert info.returncode == 0, info.stdef
-    return int(info.stdout)
-
 @pytest.mark.parametrize("output, args", [
     ("A A# G# B C A# C C# B D D# C# E F D# F F# E G G# F#", ['0']),
     ("A# B A C C# B C# D C D# E D F F# E F# G F G# A G",    ['1']),
@@ -46,14 +42,40 @@ def test_notes(notes, output, args):
     assert info.returncode == 0, info.stderr
     assert info.stdout == output
 
-def test_buffer_overflow(bufsiz):
+def test_buffer_overflow():
     for note in generate_notes():
         for offset in range(-11,12):
             info = run(str(offset), input=note)
-            assert info.returncode == 0
+            assert info.returncode == 0, info.stderr
             expected = info.stdout
-            n = bufsiz // len(note)
-            info = run(str(offset), input=note*n)
-            assert info.returncode == 0
-            assert info.stdout == expected*n, (note, offset)
+            bufsize = 2 ** 13
+            info = run(str(offset), input=note*bufsize)
+            assert info.returncode == 0, info.stderr
+            assert info.stdout == expected*bufsize
 
+def test_noise():
+    noise = ''.join(random.choice(string.ascii_lowercase) for _ in range(2 ** 13))
+    info = run('1', input=noise)
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == noise
+
+def test_blank():
+    info = run('1')
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == ''
+
+def test_only_accidents():
+    text = '#b# # b bb ##'
+    info = run('1', input=text)
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == text
+
+def test_lonely_accidents_sharp():
+    info = run('1', input='A# A Ab b #')
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == 'B A# A b #'
+
+def test_lonely_accidents_flats():
+    info = run('1', '-b', input='A# A Ab b #')
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == 'B Bb A b #'

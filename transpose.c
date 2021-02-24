@@ -84,12 +84,8 @@ int main(int argc, char** argv)
 				"Usage: %s OFFSET [OPTIONS]\n"
 				"Options:\n"
 				"  -b  print output with flat (b) instead sharp (#)\n"
-				"  -h  print usage information and exit\n"
-				"  -l  print buffer limit and exit\n", argv[0]);
+				"  -h  print usage information and exit\n", argv[0]);
 		return argc < 2;
-	} else if (has_option(argc, argv, "-l")) {
-		printf("%zu\n", (size_t) BUFSIZ);
-		return 0;
 	}
 
 	offset = strtol(argv[1], &end, 10) % 12;

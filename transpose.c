@@ -15,11 +15,10 @@ static int has_option(int argc, char** argv, const char* opt)
 int main(int argc, char** argv)
 {
 	char* end;
-	char inbuff[BUFSIZ], outbuff[BUFSIZ*3];
+	char inbuff[BUFSIZ], outbuff[BUFSIZ*2];
 	long int offset;
-	int usebemol;
+	int usesharp;
 	int usescientific;
-	size_t size;
 
 	/* A minor scale notes offsets to A */
 	static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
@@ -30,13 +29,18 @@ int main(int argc, char** argv)
 		{ "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab" }
 	};
 
-	if (argc < 2) {
+	if (argc < 2 || has_option(argc, argv, "-h")) {
 		fprintf(stderr, "Transpose musical notes by offset\n"
 				"Usage: %s OFFSET [OPTIONS]\n"
 				"Options:\n"
-				"  -b  print accidents with b instead of #\n"
-				"  -s  read scientific pitch notation\n", argv[0]);
-		return 1;
+				"  -b  print output with flat (b) instead sharp (#)\n"
+				"  -s  read input in ASPN\n"
+				"  -h  print usage information and exit\n"
+				"  -l  print buffer limit and exit\n", argv[0]);
+		return argc < 2;
+	} else if (has_option(argc, argv, "-l")) {
+		printf("%zu\n", (size_t) BUFSIZ);
+		return 0;
 	}
 
 	offset = strtol(argv[1], &end, 10);
@@ -46,7 +50,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	usebemol = has_option(argc, argv, "-b");
+	usesharp = has_option(argc, argv, "-b");
 	usescientific = has_option(argc, argv, "-s");
 
 	while (fgets(inbuff, sizeof(inbuff), stdin) != NULL) {
@@ -65,7 +69,7 @@ int main(int argc, char** argv)
 				}
 
 				newaoff = (((aoff + offset) % 12) + 12) % 12;
-				strcpy(outbuffptr, aoff2str[usebemol][newaoff]);
+				strcpy(outbuffptr, aoff2str[usesharp][newaoff]);
 				outbuffptr += strlen(outbuffptr);
 
 				if (usescientific) {
@@ -75,9 +79,12 @@ int main(int argc, char** argv)
 						return 1;
 					} else {
 						int nchars;
-						newoct = (oct * 12 + aoff - 3 + offset) / 12;
+						newoct = (oct * 12 + (aoff + 9) % 12 + offset) / 12;
 						if (newoct < 0) {
 							fprintf(stderr, "Negative octave\n");
+							return 1;
+						} else if (newoct > 9) {
+							fprintf(stderr, "Too high octave\n");
 							return 1;
 						}
 						nchars = sprintf(outbuffptr, "%ld", newoct);
@@ -85,6 +92,7 @@ int main(int argc, char** argv)
 							fprintf(stderr, "Could not print long integer to output buffer\n");
 							return 1;
 						}
+						outbuffptr += nchars;
 						inbuffptr = end - 1;
 					}
 					

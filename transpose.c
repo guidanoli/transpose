@@ -2,22 +2,38 @@
 #include <string.h>
 #include <stdlib.h>
 
+static int has_option(int argc, char** argv, const char* opt)
+{
+	while(argc--) {
+		if (strcmp(*argv, opt) == 0)
+			return 1;
+		++argv;
+	}
+	return 0;
+}
+
 int main(int argc, char** argv)
 {
 	char* end;
 	char inbuff[BUFSIZ], outbuff[BUFSIZ*3];
 	long int offset;
+	int usebemol;
 	size_t size;
 
 	/* A minor scale notes offsets to A */
 	static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
 
 	/* A chromatic scale notes */
-	static const char* const aoff2str[12] = { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
+	static const char* const aoff2str[2][12] = {
+		{ "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" },
+		{ "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab" }
+	};
 
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s OFFSET\n"
-				"Transpose musical notes by offset\n", argv[0]);
+		fprintf(stderr, "Transpose musical notes by offset\n"
+				"Usage: %s OFFSET [<opts>]\n"
+				"Options:\n"
+				"  -b  print accidents with b instead of #\n", argv[0]);
 		return 1;
 	}
 
@@ -27,6 +43,8 @@ int main(int argc, char** argv)
 		fprintf(stderr, "Could not convert '%s' into a long int\n", argv[1]);
 		return 1;
 	}
+
+	usebemol = has_option(argc, argv, "-b");
 
 	while (fgets(inbuff, sizeof(inbuff), stdin) != NULL) {
 		char* outbuffptr = outbuff;
@@ -44,7 +62,7 @@ int main(int argc, char** argv)
 				}
 
 				notevalue = (notevalue + offset + 12) % 12;
-				strcpy(outbuffptr, aoff2str[notevalue]);
+				strcpy(outbuffptr, aoff2str[usebemol][notevalue]);
 				outbuffptr += strlen(outbuffptr);
 			} else {
 				*(outbuffptr++) = inbuffch;

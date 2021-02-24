@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 
 	if (argc < 2) {
 		fprintf(stderr, "Transpose musical notes by offset\n"
-				"Usage: %s OFFSET [<opts>]\n"
+				"Usage: %s OFFSET [OPTIONS]\n"
 				"Options:\n"
 				"  -b  print accidents with b instead of #\n", argv[0]);
 		return 1;

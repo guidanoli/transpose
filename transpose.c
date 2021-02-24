@@ -15,8 +15,7 @@ static const char* const aoff2str[2][12] = {
 };
 
 
-static char letter;
-static int usesharp;
+static int letter, usesharp;
 static long int offset;
 
 static int has_option(int argc, char** argv, const char* opt)
@@ -29,59 +28,55 @@ static int has_option(int argc, char** argv, const char* opt)
 	return 0;
 }
 
-static state_t consume(char ch, state_t st)
+static state_t consume(int ch, state_t st)
 {
 	switch (st) {
 	case INITIAL:
 	{
 		if (ch >= 'A' && ch <= 'G') {
 			letter = ch;
-			return LETTER;
-		} else {
-			if (ch != '\0')
-				putchar(ch);
-			return INITIAL;
+			st = LETTER;
+		} else if (ch != EOF) {
+			putchar(ch);
 		}
+		break;
 	}
 	case LETTER:
 	{
 		long int aoff = ch2aoff[letter - 'A'];
-		int printlater = 0;
-		int isletter = 0;
+		int misc = 0;
 
 		if (ch == 'b') {
 			aoff -= 1;
+			st = INITIAL;
 		} else if (ch == '#') {
 			aoff += 1;
+			st = INITIAL;
 		} else if (ch >= 'A' && ch <= 'G') {
 			letter = ch;
-			isletter = 1;
-		} else if (ch != '\0') {
-			printlater = 1;
+		} else if (ch != EOF) {
+			misc = 1;
+			st = INITIAL;
 		}
 
 		aoff = (aoff + offset + 12) % 12;
 		printf("%s", aoff2str[usesharp][aoff]);
 
-		if (printlater)
-			putchar(ch);
-	
-		if (isletter)
-			return LETTER;
-		else
-			return INITIAL;
+		if (misc) putchar(ch);
+
+		break;
 	}
 	default:
 		fprintf(stderr, "Invalid state\n");
 		exit(1);
-		return st;
 	}
+	return st;
 }
 
 int main(int argc, char** argv)
 {
 	char* end;
-	char inbuff[BUFSIZ];
+	int ch;
 	state_t state = INITIAL;
 
 	if (argc < 2 || has_option(argc, argv, "-h")) {
@@ -106,11 +101,10 @@ int main(int argc, char** argv)
 
 	usesharp = has_option(argc, argv, "-b");
 
-	while (fgets(inbuff, sizeof(inbuff), stdin) != NULL)
-		for (char* inbuffptr = inbuff; *inbuffptr != '\0'; ++inbuffptr)
-			state = consume(*inbuffptr, state);
-
-	consume('\0', state);
+	do {
+		ch = getchar();
+		state = consume(ch, state);
+	} while (ch != EOF);
 
 	return 0;
 }

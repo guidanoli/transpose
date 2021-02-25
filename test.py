@@ -56,9 +56,8 @@ def test_generic(input, output, args, notes):
     assert info.returncode == 0, info.stderr
     assert info.stdout == output
 
-@pytest.mark.parametrize("note, offset", [
-    (note, str(offset)) for note in generate_notes() for offset in range(12)
-])
+@pytest.mark.parametrize("note, offset",
+    ((note, str(offset)) for note in generate_notes() for offset in range(12)))
 def test_buffer_overflow(note, offset):
     info = run(offset, input=note)
     assert info.returncode == 0, info.stderr

@@ -20,14 +20,6 @@ static const char * const aoff2str[2][12] = {
 	{ "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab" }
 };
 
-static state_t transpose(int ch, context_t *ctx)
-{
-	long int newaoff = (ctx->aoff + ctx->offset + 12) % 12;
-	printf("%s", aoff2str[ctx->usesharp][newaoff]);
-	if (ch != EOF) putchar(ch);
-	return INITIAL;
-}
-
 static state_t consume(int ch, state_t st, context_t *ctx)
 {
 	switch (st) {
@@ -47,7 +39,9 @@ static state_t consume(int ch, state_t st, context_t *ctx)
 			ctx->aoff = (ctx->aoff + 11) % 12;
 			return LETTER;
 		} else {
-			return transpose(ch, ctx);
+			printf("%s", aoff2str[ctx->usesharp][(ctx->aoff + ctx->offset + 12) % 12]);
+			if (ch != EOF) putchar(ch);
+			return INITIAL;
 		}
 	}
 	return st;

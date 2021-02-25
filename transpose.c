@@ -8,16 +8,18 @@ typedef enum {
 	ACCIDENT,
 } state_t;
 
+typedef struct {
+	long int offset;
+	long int aoff;
+	int usesharp;
+} context_t;
+
 static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
 
 static const char* const aoff2str[2][12] = {
 	{ "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" },
 	{ "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab" }
 };
-
-
-static int usesharp;
-static long int aoff, offset;
 
 static int has_option(int argc, char** argv, const char* opt)
 {
@@ -29,20 +31,20 @@ static int has_option(int argc, char** argv, const char* opt)
 	return 0;
 }
 
-static state_t transpose(int ch)
+static state_t transpose(int ch, context_t* ctx)
 {
-	long int newaoff = (aoff + offset + 12) % 12;
-	printf("%s", aoff2str[usesharp][newaoff]);
+	long int newaoff = (ctx->aoff + ctx->offset + 12) % 12;
+	printf("%s", aoff2str[ctx->usesharp][newaoff]);
 	if (ch != EOF) putchar(ch);
 	return INITIAL;
 }
 
-static state_t consume(int ch, state_t st)
+static state_t consume(int ch, state_t st, context_t* ctx)
 {
 	switch (st) {
 	case INITIAL:
 		if (ch >= 'A' && ch <= 'G') {
-			aoff = ch2aoff[ch - 'A'];
+			ctx->aoff = ch2aoff[ch - 'A'];
 			return LETTER;
 		} else {
 			if (ch != EOF) putchar(ch);
@@ -50,16 +52,16 @@ static state_t consume(int ch, state_t st)
 		}
 	case LETTER:
 		if (ch == '#') {
-			aoff += 1;
+			ctx->aoff += 1;
 			return ACCIDENT;
 		} else if (ch == 'b') {
-			aoff -= 1;
+			ctx->aoff -= 1;
 			return ACCIDENT;
 		} else {
-			return transpose(ch);
+			return transpose(ch, ctx);
 		}
 	case ACCIDENT:
-		return transpose(ch);
+		return transpose(ch, ctx);
 	}
 	return st;
 }
@@ -68,7 +70,8 @@ int main(int argc, char** argv)
 {
 	char* end;
 	int ch;
-	state_t state = INITIAL;
+	state_t st = INITIAL;
+	context_t ctx;
 
 	if (argc < 2 || has_option(argc, argv, "-h")) {
 		fprintf(stderr, "Transpose musical notes by offset\n"
@@ -79,18 +82,18 @@ int main(int argc, char** argv)
 		return argc < 2;
 	}
 
-	offset = strtol(argv[1], &end, 10) % 12;
+	ctx.offset = strtol(argv[1], &end, 10) % 12;
 
 	if (end == argv[1] || *end != '\0') {
 		fprintf(stderr, "Could not convert '%s' into a long int\n", argv[1]);
 		return 1;
 	}
 
-	usesharp = has_option(argc, argv, "-b");
+	ctx.usesharp = has_option(argc, argv, "-b");
 
 	do {
 		ch = getchar();
-		state = consume(ch, state);
+		st = consume(ch, st, &ctx);
 	} while (ch != EOF);
 
 	return 0;

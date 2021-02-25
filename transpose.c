@@ -5,7 +5,8 @@
 typedef enum {
 	INITIAL,
 	LETTER,
-	ACCIDENT,
+	SHARP,
+	FLAT,
 } state_t;
 
 typedef struct {
@@ -16,22 +17,12 @@ typedef struct {
 
 static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
 
-static const char* const aoff2str[2][12] = {
+static const char * const aoff2str[2][12] = {
 	{ "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" },
 	{ "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab" }
 };
 
-static int has_option(int argc, char** argv, const char* opt)
-{
-	while(argc--) {
-		if (strcmp(*argv, opt) == 0)
-			return 1;
-		++argv;
-	}
-	return 0;
-}
-
-static state_t transpose(int ch, context_t* ctx)
+static state_t transpose(int ch, context_t *ctx)
 {
 	long int newaoff = (ctx->aoff + ctx->offset + 12) % 12;
 	printf("%s", aoff2str[ctx->usesharp][newaoff]);
@@ -39,7 +30,7 @@ static state_t transpose(int ch, context_t* ctx)
 	return INITIAL;
 }
 
-static state_t consume(int ch, state_t st, context_t* ctx)
+static state_t consume(int ch, state_t st, context_t *ctx)
 {
 	switch (st) {
 	case INITIAL:
@@ -52,28 +43,61 @@ static state_t consume(int ch, state_t st, context_t* ctx)
 		}
 	case LETTER:
 		if (ch == '#') {
-			ctx->aoff += 1;
-			return ACCIDENT;
+			ctx->aoff = (ctx->aoff + 1) % 12;
+			return SHARP;
 		} else if (ch == 'b') {
-			ctx->aoff -= 1;
-			return ACCIDENT;
+			ctx->aoff = (ctx->aoff + 11) % 12;
+			return FLAT;
 		} else {
 			return transpose(ch, ctx);
 		}
-	case ACCIDENT:
-		return transpose(ch, ctx);
+	case FLAT:
+		if (ch == 'b') {
+			ctx->aoff = (ctx->aoff + 1) % 12;
+			return FLAT;
+		} else {
+			return transpose(ch, ctx);
+		}
+	case SHARP:
+		if (ch == '#') {
+			ctx->aoff = (ctx->aoff + 11) % 12;
+			return SHARP;
+		} else {
+			return transpose(ch, ctx);
+		}
 	}
 	return st;
 }
 
-int main(int argc, char** argv)
+static long int str2long(const char* nptr)
 {
-	char* end;
+	char *end;
+	long int l;
+	l = strtol(nptr, &end, 10);
+	if (end == nptr || *end != '\0') {
+		fprintf(stderr, "Could not convert '%s' into a long int\n", nptr);
+		exit(1);
+	}
+	return l;
+}
+
+static int hasoption(int argc, char **argv, const char *opt)
+{
+	while(argc--) {
+		if (strcmp(*argv, opt) == 0)
+			return 1;
+		++argv;
+	}
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
 	int ch;
 	state_t st = INITIAL;
 	context_t ctx;
 
-	if (argc < 2 || has_option(argc, argv, "-h")) {
+	if (argc < 2 || hasoption(argc, argv, "-h")) {
 		fprintf(stderr, "Transpose musical notes by offset\n"
 				"Usage: %s OFFSET [OPTIONS]\n"
 				"Options:\n"
@@ -82,14 +106,8 @@ int main(int argc, char** argv)
 		return argc < 2;
 	}
 
-	ctx.offset = strtol(argv[1], &end, 10) % 12;
-
-	if (end == argv[1] || *end != '\0') {
-		fprintf(stderr, "Could not convert '%s' into a long int\n", argv[1]);
-		return 1;
-	}
-
-	ctx.usesharp = has_option(argc, argv, "-b");
+	ctx.offset = str2long(argv[1]) % 12;
+	ctx.usesharp = hasoption(argc, argv, "-b");
 
 	do {
 		ch = getchar();

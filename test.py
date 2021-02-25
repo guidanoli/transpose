@@ -75,11 +75,11 @@ def test_buffer_overflow(note):
     offset = str(12 * octaves)
     info = run(offset, input=note)
     assert info.returncode == 0, info.stderr
-    tranposed_note = info.stdout
-    bufsiz = 2 ** 13
-    info = run(offset, '-s', input=' '.join(note + "0" for _ in range(bufsiz)))
+    expected = info.stdout
+    bufsize = 2 ** 13
+    info = run(offset, '-s', input=' '.join(note + "0" for _ in range(bufsize)))
     assert info.returncode == 0, info.stderr
-    assert info.stdout == ' '.join(tranposed_note + str(octaves) for _ in range(bufsiz))
+    assert info.stdout == ' '.join(expected + str(octaves) for _ in range(bufsize))
 
 def test_noise():
     noise = ''.join(random.choice(string.ascii_lowercase) for _ in range(2 ** 13))

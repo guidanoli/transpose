@@ -71,7 +71,7 @@ static state_t consume(int ch, state_t st, context_t *ctx)
 		} else {
 			char newaoff = (ctx->aoff + ctx->offset % 12 + 12) % 12;
 			long int c0off = (ctx->aoff + 9) % 12 + ctx->octave * 12 + ctx->offset;
-			if (c0off < 0) error("Could not tranpose to note lower than C0");
+			if (c0off < 0) error("Could not transpose to note lower than C0");
 			printf("%s%ld", aoff2str[ctx->usesharp][newaoff], c0off / 12);
 			if (ch != EOF) putchar(ch);
 			return INITIAL;

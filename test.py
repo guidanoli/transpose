@@ -49,9 +49,9 @@ def test_buffer_overflow():
             assert info.returncode == 0, info.stderr
             expected = info.stdout
             bufsize = 2 ** 13
-            info = run(str(offset), input=note*bufsize)
+            info = run(str(offset), input=' '.join(note for _ in range(bufsize)))
             assert info.returncode == 0, info.stderr
-            assert info.stdout == expected*bufsize
+            assert info.stdout == ' '.join(expected for _ in range(bufsize))
 
 def test_noise():
     noise = ''.join(random.choice(string.ascii_lowercase) for _ in range(2 ** 13))

@@ -5,6 +5,7 @@
 typedef enum {
 	INITIAL,
 	LETTER,
+	ACCIDENT,
 } state_t;
 
 static const int ch2aoff[7] = { 0, 2, 3, 5, 7, 8, 10 };
@@ -15,8 +16,8 @@ static const char* const aoff2str[2][12] = {
 };
 
 
-static int letter, usesharp;
-static long int offset;
+static int usesharp;
+static long int aoff, offset;
 
 static int has_option(int argc, char** argv, const char* opt)
 {
@@ -28,47 +29,37 @@ static int has_option(int argc, char** argv, const char* opt)
 	return 0;
 }
 
+static state_t transpose(int ch)
+{
+	long int newaoff = (aoff + offset + 12) % 12;
+	printf("%s", aoff2str[usesharp][newaoff]);
+	if (ch != EOF) putchar(ch);
+	return INITIAL;
+}
+
 static state_t consume(int ch, state_t st)
 {
 	switch (st) {
 	case INITIAL:
-	{
 		if (ch >= 'A' && ch <= 'G') {
-			letter = ch;
-			st = LETTER;
-		} else if (ch != EOF) {
-			putchar(ch);
+			aoff = ch2aoff[ch - 'A'];
+			return LETTER;
+		} else {
+			if (ch != EOF) putchar(ch);
+			return INITIAL;
 		}
-		break;
-	}
 	case LETTER:
-	{
-		long int aoff = ch2aoff[letter - 'A'];
-		int misc = 0;
-
-		if (ch == 'b') {
-			aoff -= 1;
-			st = INITIAL;
-		} else if (ch == '#') {
+		if (ch == '#') {
 			aoff += 1;
-			st = INITIAL;
-		} else if (ch >= 'A' && ch <= 'G') {
-			letter = ch;
-		} else if (ch != EOF) {
-			misc = 1;
-			st = INITIAL;
+			return ACCIDENT;
+		} else if (ch == 'b') {
+			aoff -= 1;
+			return ACCIDENT;
+		} else {
+			return transpose(ch);
 		}
-
-		aoff = (aoff + offset + 12) % 12;
-		printf("%s", aoff2str[usesharp][aoff]);
-
-		if (misc) putchar(ch);
-
-		break;
-	}
-	default:
-		fprintf(stderr, "Invalid state\n");
-		exit(1);
+	case ACCIDENT:
+		return transpose(ch);
 	}
 	return st;
 }

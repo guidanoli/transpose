@@ -53,6 +53,14 @@ class Notes:
     ("A##############", "B", ['0']),
     ("Abbbbbbbbbbbbbb", "G", ['0']),
     ("Ab# A#b Abb# A##b Abb#b A##b#", "A A G# A# G B", ['0']),
+    ("C1 D1 E1 F1 G1 A1 B1", "A0 B0 C#1 D1 E1 F#1 G#1", ['-3', '-s']),
+    ("C1 D1 E1 F1 G1 A1 B1", "D#1 F1 G1 G#1 A#1 C2 D2", ['3', '-s']),
+    ("C2 D2 E2 F2 G2 A2 B2", "A0 B0 C#1 D1 E1 F#1 G#1", ['-15', '-s']),
+    ("C1 D1 E1 F1 G1 A1 B1", "D#2 F2 G2 G#2 A#2 C3 D3", ['15', '-s']),
+    ("C1 D1 E1 F1 G1 A1 B1", "A0 B0 Db1 D1 E1 Gb1 Ab1", ['-3', '-s', '-b']),
+    ("C1 D1 E1 F1 G1 A1 B1", "Eb1 F1 G1 Ab1 Bb1 C2 D2", ['3', '-s', '-b']),
+    ("C2 D2 E2 F2 G2 A2 B2", "A0 B0 Db1 D1 E1 Gb1 Ab1", ['-15', '-s', '-b']),
+    ("C1 D1 E1 F1 G1 A1 B1", "Eb2 F2 G2 Ab2 Bb2 C3 D3", ['15', '-s', '-b']),
 ])
 def test_generic(input, output, args, notes):
     if isinstance(input, Notes):
@@ -61,19 +69,25 @@ def test_generic(input, output, args, notes):
     assert info.returncode == 0, info.stderr
     assert info.stdout == output
 
-@pytest.mark.parametrize("note, offset",
-    ((note, str(offset)) for note in generate_notes() for offset in range(12)))
-def test_buffer_overflow(note, offset):
+@pytest.mark.parametrize("note", generate_notes())
+def test_buffer_overflow(note):
+    octaves = 1000
+    offset = str(12 * octaves)
     info = run(offset, input=note)
     assert info.returncode == 0, info.stderr
-    expected = info.stdout
-    bufsize = 2 ** 13
-    info = run(offset, input=' '.join(note for _ in range(bufsize)))
+    tranposed_note = info.stdout
+    bufsiz = 2 ** 13
+    info = run(offset, '-s', input=' '.join(note + "0" for _ in range(bufsiz)))
     assert info.returncode == 0, info.stderr
-    assert info.stdout == ' '.join(expected for _ in range(bufsize))
+    assert info.stdout == ' '.join(tranposed_note + str(octaves) for _ in range(bufsiz))
 
 def test_noise():
     noise = ''.join(random.choice(string.ascii_lowercase) for _ in range(2 ** 13))
     info = run('1', input=noise)
     assert info.returncode == 0, info.stderr
     assert info.stdout == noise
+
+def test_lower_than_c0():
+    info = run('-1', '-s', input="C0")
+    assert info.returncode != 0
+    assert "lower than C0" in info.stderr

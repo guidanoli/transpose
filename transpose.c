@@ -5,8 +5,6 @@
 typedef enum {
 	INITIAL,
 	LETTER,
-	SHARP,
-	FLAT,
 } state_t;
 
 typedef struct {
@@ -44,24 +42,10 @@ static state_t consume(int ch, state_t st, context_t *ctx)
 	case LETTER:
 		if (ch == '#') {
 			ctx->aoff = (ctx->aoff + 1) % 12;
-			return SHARP;
+			return LETTER;
 		} else if (ch == 'b') {
 			ctx->aoff = (ctx->aoff + 11) % 12;
-			return FLAT;
-		} else {
-			return transpose(ch, ctx);
-		}
-	case SHARP:
-		if (ch == '#') {
-			ctx->aoff = (ctx->aoff + 1) % 12;
-			return SHARP;
-		} else {
-			return transpose(ch, ctx);
-		}
-	case FLAT:
-		if (ch == 'b') {
-			ctx->aoff = (ctx->aoff + 11) % 12;
-			return FLAT;
+			return LETTER;
 		} else {
 			return transpose(ch, ctx);
 		}

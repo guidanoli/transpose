@@ -19,6 +19,11 @@ def test_help():
     info = run('-h')
     assert info.returncode == 0
 
+def test_offset_parse():
+    info = run('1a')
+    assert info.returncode != 0
+    assert '1a' in info.stderr
+
 def generate_notes():
     for letter in "ABCDEFG":
         yield letter

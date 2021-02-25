@@ -51,17 +51,17 @@ static state_t consume(int ch, state_t st, context_t *ctx)
 		} else {
 			return transpose(ch, ctx);
 		}
-	case FLAT:
-		if (ch == 'b') {
+	case SHARP:
+		if (ch == '#') {
 			ctx->aoff = (ctx->aoff + 1) % 12;
-			return FLAT;
+			return SHARP;
 		} else {
 			return transpose(ch, ctx);
 		}
-	case SHARP:
-		if (ch == '#') {
+	case FLAT:
+		if (ch == 'b') {
 			ctx->aoff = (ctx->aoff + 11) % 12;
-			return SHARP;
+			return FLAT;
 		} else {
 			return transpose(ch, ctx);
 		}

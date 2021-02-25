@@ -79,3 +79,13 @@ def test_lonely_accidents_flats():
     info = run('1', '-b', input='A# A Ab b #')
     assert info.returncode == 0, info.stderr
     assert info.stdout == 'B Bb A b #'
+
+def test_multiple_sharps():
+    info = run('-1', input='A## B## C## D## E## F## G##')
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == 'A# C C# D# F F# G#'
+
+def test_multiple_flats():
+    info = run('1', '-b', input='Abb Bbb Cbb Dbb Ebb Fbb Gbb')
+    assert info.returncode == 0, info.stderr
+    assert info.stdout == 'Ab Bb B Db Eb E Gb'
